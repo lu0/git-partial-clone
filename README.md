@@ -8,16 +8,16 @@ This script clones a subdirectory of a github/gitlab repository.
 Test the script with the example config file.
 By the end of the execution, you will see a `tmp` directory containing the subfolder of the example repository.
 ```zsh
-./git-partial-clone.sh example.conf
+./git-partial-clone.sh --file example.conf
 ```
 ## Install
-Add the script to your `PATH`
+Install the script and autocompletion rules.
 ```zsh
-ln -srf git-partial-clone.sh ~/.local/bin/git-partial-clone
+./install.sh
 ```
-Then you can execute the script from any directory with your custom config file.
+Then you can execute the script from any directory with your custom config file and use `TAB` to autocomplete the CLI options.
 ```zsh
-git-partial-clone path/to/your/config/file.conf
+git-partial-clone --file path/to/your/config/file.conf
 ```
 
 # Configuration
