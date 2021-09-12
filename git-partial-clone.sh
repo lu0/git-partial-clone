@@ -112,9 +112,8 @@ enable-partial-clone() {
     # Enable partial cloning if a subfolder is provided
     local CLONE_DIR=${1}
     local REMOTE_PARTIAL_DIR=${2}
-    [ ${REMOTE_PARTIAL_DIR} ] \
-        && git -C ${CLONE_DIR} config --local extensions.partialClone origin \
-        && git -C ${CLONE_DIR} sparse-checkout set ${REMOTE_PARTIAL_DIR}
+    git -C ${CLONE_DIR} config --local extensions.partialClone origin
+    [ ${REMOTE_PARTIAL_DIR} ] && git -C ${CLONE_DIR} sparse-checkout set ${REMOTE_PARTIAL_DIR}
 }
 
 fetch-commit-history() {
