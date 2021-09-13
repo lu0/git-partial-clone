@@ -11,7 +11,6 @@ echo "Installing git-partial-clone ..."
 LOCAL_PATH=~/.local/bin
 BASH_COMPLETION_DIR=~/.local/etc/bash_completion.d
 BASH_COMPLETION_SCRIPT=~/.bash_completion
-KEYWORDS_DIR=~/.config/git-partial-clone
 
 echo "Adding script to the local PATH ..."
 ln -srf git-partial-clone.sh ${LOCAL_PATH}/git-partial-clone
@@ -19,12 +18,11 @@ ln -srf git-partial-clone.sh ${LOCAL_PATH}/git-partial-clone
 echo "Adding the completion rules ..."
 mkdir -p ${BASH_COMPLETION_DIR}
 ln -srf completion-rules.sh ${BASH_COMPLETION_DIR}/git-partial-clone
-mkdir -p ${KEYWORDS_DIR}
-ln -srf keywords ${KEYWORDS_DIR}/
 echo "for file in ${BASH_COMPLETION_DIR}/* ; do" >> ${BASH_COMPLETION_SCRIPT}
 echo -e "\t. \$file" >> ${BASH_COMPLETION_SCRIPT}
 echo "done" >> ${BASH_COMPLETION_SCRIPT}
 echo "Done!"
 
+# Force sourcing of /etc/bash_completion
 exec bash
  

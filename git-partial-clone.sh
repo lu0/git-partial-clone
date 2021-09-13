@@ -8,46 +8,132 @@
 #   https://github.com/lu0/git-partial-clone
 #
 
+INITIAL_DIR=${PWD}
 
 main() {
-    usage() {
-        # echo "This script must be run with super-user privileges." 
-	    # echo -e "\nUsage: \$0 [arguments] \n" 
+    _usage() {
         echo -e "\nClone a subdirectory of a github/gitlab repository."
         echo -e "\nUSAGE:"
-        echo -e "   git-partial-clone [OPTIONS] ARGUMENTS"
+        echo -e "   git-partial-clone   [OPTIONS] ARGUMENTS"
+        echo -e "   git-partial-clone   # Or assume config variables in shell."
         echo -e "\nOPTIONS:"
+        echo -e "            --help     Show this manual.\n"
         echo -e "   Using a config file:"
         echo -e "       -f | --file     Path to the configuration file.\n"
-        echo
+        echo -e "   CLI options (mandatory):"
+        echo -e "       -o | --owner    Author (owner) of the repository."
+        echo -e "       -r | --repo     Name of the repository.\n"
+        echo -e "   CLI options (optional):"
+        echo -e "       -h | --host     github (default) or gitlab."
+        echo -e "       -s | --subdir   Subfolder to be cloned.\n"
+        echo -e "       -t | --token    Path to your access token (for private repos)."
+        echo -e "       -u | --user     Your username (for private repos).\n"
+        echo -e "       -b | --branch   Branch to be fetched."
+        echo -e "       -d | --depth    Number of commits to be fetched.\n"
     }
     case $# in
-    2) 
-        FILE_PATH=${2}
-        [ ${FILE_PATH} ] \
-            && _git-partial-clone ${FILE_PATH} \
-            || usage
-        ;;
-    *)
-        usage
-        ;;
+        0)
+            # Did not receive arguments, hence the config file is missing;
+            # assume existing config variables in the environment
+            _notif warn "Assuming existing config variables in environment."
+            _assume-vars-in-env ;;
+        1)
+            # The script will detect a single argument if called as
+            #       'git-partial-clone --file=/path/to/file'
+            # or if the autocompletion feature is searching for the usage section
+            [[ ${1} == "--file"* ]] \
+                && _get-vars-from-cli "$@" \
+                || _usage
+            ;;
+        *)
+            # Parse each option-argument pair from the CLI
+            _get-vars-from-cli "$@" ;;
     esac
+}
+
+_parse-optarg() {
+    # Parse CLI option-argument pairs given the original OPT
+    #   (to detect wheter it is a short or a long option)
+    # Usage: _parse-optarg <key value pair> <old OPT> new_OPT ARG
+    OPTARG="${1}"
+    OPT=${2}
+    [ "$OPT" = "-" ] \
+        && OPT="${OPTARG%%=*}" && { ARG="${OPTARG#$OPT}" && ARG="${ARG#=}" ;} \
+        || ARG="${OPTARG}"
+    # echo "parsed OPT='${OPT}'"
+    # echo "parsed ARG='${ARG}'"
+    eval "${3}='${OPT}'"    # in-place return of new OPT
+    eval "${4}='${ARG}'"    # in-place return of ARG
+}
+
+_assume-vars-in-env() {
+    export TMP_CONF_FILE=~/.git-partial-clone-tmp.conf
+
+    _notif warn "Writing variables into ${TMP_CONF_FILE}"
+    rm -rf ${TMP_CONF_FILE}
+    echo "GIT_HOST=${GIT_HOST}" >> ${TMP_CONF_FILE}
+    echo "REPO_OWNER=${REPO_OWNER}" >> ${TMP_CONF_FILE}
+    echo "REPO_NAME=${REPO_NAME}" >> ${TMP_CONF_FILE}
+    echo "REMOTE_PARTIAL_DIR=${REMOTE_PARTIAL_DIR}" >> ${TMP_CONF_FILE}
+    echo "TOKEN_PATH=${TOKEN_PATH}" >> ${TMP_CONF_FILE}
+    echo "GIT_USER=${GIT_USER}" >> ${TMP_CONF_FILE}
+    echo "BRANCH=${BRANCH}" >> ${TMP_CONF_FILE}
+    echo "COMMIT_DEPTH=${COMMIT_DEPTH}" >> ${TMP_CONF_FILE}
+
+    # Clear the current environment
+    _unset-variables-from-file ${TMP_CONF_FILE}
+
+    # Clone by using the temp config file
+    _git-partial-clone ${TMP_CONF_FILE}
+}
+
+_get-vars-from-cli() {
+    while getopts f:h:o:r:s:t:u:b:d:-: OPT; do
+
+        _parse-optarg "${OPTARG}" ${OPT} OPT ARG
+        _is-arg-provided "${OPT}" "${ARG}" || _abort
+
+        case "$OPT" in
+            f | file)
+                FILE_PATH="${ARG}"
+                _git-partial-clone ${FILE_PATH}
+                return
+                ;;
+            h | host)   export GIT_HOST="${ARG}" ;;
+            o | owner)  export REPO_OWNER="${ARG}" ;;
+            r | repo)   export REPO_NAME="${ARG}" ;;
+            s | subdir) export REMOTE_PARTIAL_DIR="${ARG}" ;;
+            t | token)  export TOKEN_PATH="${ARG}" ;;
+            u | user)   export GIT_USER="${ARG}" ;;
+            b | branch) export BRANCH="${ARG}" ;;
+            d | depth)  export COMMIT_DEPTH="${ARG}" ;;
+            ??*)
+                _notif info "illegal option --${OPT}"
+                exit ;;
+            ?)
+                exit 2 ;; # Handle short options with getopts
+        esac
+    done
+
+    # Clone by using the exported variables
+    _assume-vars-in-env
 }
 
 _git-partial-clone() {
     # Source config file
     [ -f ${1} ] \
-        && _get-variables-from-file ${1} \
+        && _get-vars-from-file ${1} \
         || _notif err "Not a valid path."
 
-    _check-mandatory-vars "GIT_HOST REPO_NAME REPO_OWNER" || _abort
+    _check-mandatory-vars "REPO_NAME REPO_OWNER" || _abort
     _get-token-from-file "${TOKEN_PATH}" GIT_TOKEN
-    
+
     # Change working directory
     _get-clone-dir-path "${PARENT_DIR}" "${REPO_NAME}" CLONE_DIR || _abort
     mkdir "${CLONE_DIR}" && cd "${CLONE_DIR}" || _abort
 
-    # Add origin
+    # Add origin, default to github if not provided
+    [ -z ${GIT_HOST} ] && GIT_HOST=github
     [ -d "${CLONE_DIR}"/.git/ ] \
         && _notif err "${CLONE_DIR} is already a git directory." && _abort \
         || git init
@@ -121,13 +207,13 @@ _get-clone-dir-path() {
         || { _notif err "${PARENT_DIR} does not exist." && return 1 ;}
 }
 
-_get-variables-from-file() {
-    # Set the variables contained in a file of key-value pairs
+_get-vars-from-file() {
+    # Set the variables contained in a file of option-argument pairs
     export $(grep --invert-match '^#' ${1} | xargs -d '\n')
 }
 
 _unset-variables-from-file() {
-    # Removes variables contained in a file of key-value pairs
+    # Removes variables contained in a file of option-argument pairs
     unset $(grep --invert-match '^#' ${1} | \
             grep --perl-regexp --only-matching '.*(?=\=)' | xargs)
 }
@@ -188,6 +274,17 @@ _pull-all-branches() {
     git checkout ${HEAD_BRANCH}
 }
 
+_is-arg-provided() {
+    OPT="$1"; ARG="$2"
+    [ -z "${ARG}" ] \
+        && _notif err "${OPT} requires an argument." \
+            && _notif info "Provide it with:" \
+            && _notif info "\tLong:      --option=argument" \
+            && _notif info "\tShort:     -o argument" \
+            && return 1 \
+        || return 0
+}
+
 _notif() {
     # Usage: _notif <status> <message>
     local info='\033[0m'
@@ -202,11 +299,13 @@ _notif() {
 
 _abort() {
     _notif err "Aborted."
+    rm -v ${TMP_CONF_FILE}
     case $# in
     1)
-        _notif warn "Removing empty tree in ${CLONE_DIR}"
-        rm -rf ${CLONE_DIR} && \
-        rmdir -p --ignore-fail-on-non-empty ${CLONE_DIR%/*}
+        [[ ${CLONE_DIR} != ${INITIAL_DIR} ]] \
+            && _notif warn "Removing empty tree in ${CLONE_DIR}" \
+            && rmdir -p --ignore-fail-on-non-empty ${CLONE_DIR%/*} \
+            && rm -rf ${CLONE_DIR}
         ;;
     esac
     exit
