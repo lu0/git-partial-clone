@@ -14,14 +14,9 @@ This script clones a subdirectory of a github/gitlab repository.
     - [Optional variables](#optional-variables)
 
 # Install
-Clone this repository
-```zsh
-sudo apt install -y git
-git clone https://github.com/lu0/git-partial-clone.git
-```
 Install the script and autocompletion rules.
 ```zsh
-cd git-partial-clone/ && ./install.sh
+./install.sh
 ```
 Then you can call the command `git-partial-clone` from any directory and use `TAB` to autocomplete the CLI options.
 

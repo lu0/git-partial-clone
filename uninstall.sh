@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # Uninstaller for the git-partial-clone script
@@ -7,23 +7,41 @@
 #   https://github.com/lu0/git-partial-clone
 #
 
-echo "Uninstalling git-partial-clone ..."
-LOCAL_PATH=~/.local/bin
-BASH_COMPLETION_DIR=~/.local/etc/bash_completion.d
-BASH_COMPLETION_SCRIPT=~/.bash_completion
+main() {
+    # Uninstall local installation
+    if [ ${SUDO_USER} ]; then
+        [ "$EUID" -eq 0 ] && CURR_USER=${SUDO_USER} || CURR_USER=$(whoami)
+    else
+        CURR_USER=$(whoami)
+    fi
+    CURR_HOME=$(getent passwd ${CURR_USER} | cut -d ':' -f 6)
 
-echo "Removing script from the local PATH ..."
-rm -rf ${LOCAL_PATH}/git-partial-clone
+    # Define configuration variables
+    BIN_PATH=${CURR_HOME}/.local/bin
+    CONFIG_DIR=${CURR_HOME}/.config/git-partial-clone
+    COMPLETION_RULES_FILE=${CONFIG_DIR}/completion_rules
+    BLOCK_DELIMITER="### added by git-partial-clone"
 
-echo "Removing the completion rules ..."
-LINES_IN_FILE=$([[ -f ~/.bash_completion ]] \
-                    && sort ~/.bash_completion | uniq | wc -l)
-[[ ${LINES_IN_FILE} == 3 ]] \
-    && rm -rf ${BASH_COMPLETION_DIR} \
-    && rm -rf ~/.bash_completion \
-    || rm -rf ${BASH_COMPLETION_SCRIPT}
-echo "Done!"
+    # The files are removed interactively, as this is a beta release
+    # and I can't guarantee the script is not deleting important files...
 
-# Force sourcing of /etc/bash_completion
-exec bash
- 
+    # Uninstall the script
+    echo "Removing script from the local PATH ..."
+    [ -f ${CURR_HOME}/.bashrc ] && \
+        sed -i "/${BLOCK_DELIMITER}/,/${BLOCK_DELIMITER}/d" ${CURR_HOME}/.bashrc
+    rm -i "${BIN_PATH}/git-partial-clone"
+
+    # Uninstall the autocompletion rules
+    echo "Removing the autocompletion rules ..."
+    [ -f ${CURR_HOME}/.bash_completion ] && \
+        sed -i "/${BLOCK_DELIMITER}/,/${BLOCK_DELIMITER}/d" ${CURR_HOME}/.bash_completion
+    rm -ri "${COMPLETION_RULES_FILE}"
+
+    # Remove the installation directory
+    rm -ri "${CONFIG_DIR}"
+
+    exec bash
+    echo "Done!"
+}
+
+main
