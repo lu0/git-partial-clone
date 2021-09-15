@@ -29,6 +29,7 @@ main() {
         echo -e "       -t | --token    Path to your access token (for private repos)."
         echo -e "       -u | --user     Your username (for private repos).\n"
         echo -e "       -b | --branch   Branch to be fetched."
+        echo -e "       -v | --tag      Tag of the version to be fetched."
         echo -e "       -d | --depth    Number of commits to be fetched.\n"
     }
     case $# in
