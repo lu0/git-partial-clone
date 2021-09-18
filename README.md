@@ -46,7 +46,6 @@ OPTIONS:
        -s | --subdir   Subfolder to be cloned.
 
        -t | --token    Path to your access token (for private repos).
-       -u | --user     Your username (for private repos).
 
        -b | --branch   Branch to be fetched.
        -v | --tag      Tag of the version to be fetched.
@@ -72,12 +71,10 @@ You will need to generate an access token in order to clone private repositories
 - Github: [github.com/settings/tokens](https://github.com/settings/tokens).
 - Gitlab: [gitlab.com/-/profile/personal_access_tokens](https://gitlab.com/-/profile/personal_access_tokens).
 
-Save your token in a file and provide its path with the `--token` option, then provide your username with the `--user` option.
-
-The following example would clone a subfolder of a private repository.
+Save your token in a file and provide its path with the `--token` option, the following example would clone a subfolder of a private repository.
 ```zsh
 git-partial-clone --owner=owner --repo=repo --subdir=path/to/subdir \
-    --token=/path/to/your/token/file --user=username_with_access
+    --token=/path/to/your/token/file
 ```
 
 # Using a configuration file
@@ -106,8 +103,6 @@ Fill in the config file ([`template.conf`](./template.conf)) with the informatio
 ### Variables for **private repositories**
 - `TOKEN_PATH`:
     - Path to the file containing the access token.
-- `GIT_USER`:
-    - Username with access to the repository.
 
 ### Optional variables
 - `BRANCH`:
@@ -116,7 +111,7 @@ Fill in the config file ([`template.conf`](./template.conf)) with the informatio
     - Overrided by `TAG_NAME`.
 - `TAG_NAME`:(tag | t)
     - Tag of the version to be fetched.
-    - Omit it to fetch the latest commit.
+    - Omit it to fetch the latest commit of `BRANCH`.
     - Takes precedence over `BRANCH`.
 - `COMMIT_DEPTH`:
     - Number of commits you want to fetch (useful for deployment purposes).

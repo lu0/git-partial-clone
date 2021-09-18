@@ -1,68 +1,96 @@
 #!/usr/bin/env bash
 
+#                                                          -*- shell-script -*-
 #
-# Installer for the git-partial-clone script
+#   install - This file is part of git-partial-clone.
 #
-# Copyright (c) 2021 Lucero Alvarado 
+#   Copyright © 2021, Lucero Alvarado <me@lucerocodes.com>
+#
+#   git-partial-clone is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   git-partial-clone is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with git-partial-clone.  If not, see <https://www.gnu.org/licenses/>.
+#
+#   The latest version of git-partial-clone can be obtained here:
 #   https://github.com/lu0/git-partial-clone
 #
+#   Disclaimer template from: https://www.gnu.org/licenses/gpl-howto.en.html
 
 main() {
+    local curr_user curr_home
+    local bin_path config_dir completion_rules_file
+    local block_delimiter bash_completion_script
+
     if [ ${SUDO_USER} ]; then
-        [ "$EUID" -eq 0 ] && CURR_USER=${SUDO_USER} || CURR_USER=$(whoami)
+        [ "$EUID" -eq 0 ] && curr_user=${SUDO_USER} || curr_user=$(whoami)
     else
-        CURR_USER=$(whoami)
+        curr_user=$(whoami)
     fi
-    CURR_HOME=$(getent passwd ${CURR_USER} | cut -d ':' -f 6)
+    curr_home=$(getent passwd ${curr_user} | cut -d ':' -f 6)
 
     # Define configuration variables
-    BIN_PATH=${CURR_HOME}/.local/bin
-    CONFIG_DIR=${CURR_HOME}/.config/git-partial-clone
-    COMPLETION_RULES_FILE=${CONFIG_DIR}/completion_rules
-    BLOCK_DELIMITER="### added by git-partial-clone"
+    bin_path=${curr_home}/.local/bin
+    config_dir=${curr_home}/.config/git-partial-clone
+    completion_rules_file=${config_dir}/completion_rules
+    block_delimiter="### added by git-partial-clone"
 
     # Create install directories
-    mkdir -p ${CONFIG_DIR}
+    mkdir -p ${bin_path}
+    mkdir -p ${config_dir}
 
     # Install the script
     echo "Adding script to the local PATH ..."
-    mkdir -p ${BIN_PATH}
-    echo -e "\n${BLOCK_DELIMITER}" >> ${CURR_HOME}/.bashrc
-    echo -e "PATH=\"${BIN_PATH}:\$PATH\"" >> ${CURR_HOME}/.bashrc
-    echo "${BLOCK_DELIMITER}" >> ${CURR_HOME}/.bashrc
-    ln -srf git-partial-clone.sh ${BIN_PATH}/git-partial-clone
+    echo -e "\n${block_delimiter}" >> ${curr_home}/.bashrc
+    echo -e "PATH=\"${bin_path}:\$PATH\"" >> ${curr_home}/.bashrc
+    echo "${block_delimiter}" >> ${curr_home}/.bashrc
+    ln -srf git-partial-clone.sh ${bin_path}/git-partial-clone
     
     # Install the autocompletion rules
     echo "Installing the completion rules ..."
-    BASH_COMPLETION_SCRIPT=${CURR_HOME}/.bash_completion
+    bash_completion_script=${curr_home}/.bash_completion
     _install-package bash-completion
-    ln -srf completion-rules.sh ${COMPLETION_RULES_FILE}
-    echo -e "\n${BLOCK_DELIMITER}" >> ${BASH_COMPLETION_SCRIPT}
-    echo -e ". ${COMPLETION_RULES_FILE}" >> ${BASH_COMPLETION_SCRIPT}
-    echo "${BLOCK_DELIMITER}" >> ${BASH_COMPLETION_SCRIPT}
+    ln -srf completion-rules.sh ${completion_rules_file}
+    echo -e "\n${block_delimiter}" >> ${bash_completion_script}
+    echo -e ". ${completion_rules_file}" >> ${bash_completion_script}
+    echo "${block_delimiter}" >> ${bash_completion_script}
 
     # Force reload of the completition rules
-    echo -e "\n${BLOCK_DELIMITER}" >> ${CURR_HOME}/.bashrc
-    echo -e ". /etc/bash_completion" >> ${CURR_HOME}/.bashrc
-    echo "${BLOCK_DELIMITER}" >> ${CURR_HOME}/.bashrc
+    echo -e "\n${block_delimiter}" >> ${curr_home}/.bashrc
+    echo -e ". /etc/bash_completion" >> ${curr_home}/.bashrc
+    echo "${block_delimiter}" >> ${curr_home}/.bashrc
 
     echo "Done!"
     exec bash
 }
 
 _install-package() {
-    # Installs a package if not found
-    # Usage: _install-package <PACKAGE>
-    local IS_PACKAGE_INSTALLED=$(
+    # Install a package if not found
+    # Usage:
+    #   _install-package $1
+    # Param $1  Name of the package to be installed
+    local is_package_installed err_msg
+    
+    is_package_installed=$(
         dpkg-query -Wf='${Status}' ${1} 2>/dev/null \
         | grep --count "install ok installed"
     )
-    local ERR_MSG="Error installing the autocompletion rules."
-    if [[ ${IS_PACKAGE_INSTALLED} -eq 0 ]]; then
+
+    if [[ ${is_package_installed} -eq 0 ]]; then
         echo "Installing required package ${1} ..."
-        [ "$EUID" -eq 0 ] \
-            && { apt install ${1} || echo ${ERR_MSG} ;} \
-            || { sudo apt install ${1} || echo ${ERR_MSG} ;}
+        err_msg="Error installing the autocompletion rules."
+        if [[ "$EUID" -eq 0 ]]; then
+            apt install ${1} || echo ${err_msg}
+        else
+            sudo apt install ${1} || echo ${err_msg}
+        fi
     fi
 }
 
