@@ -40,8 +40,12 @@ _git-partial-clone()
             return
             ;;
         --owner | -o | --repo | -r | --subdir | -s | \
-        --user | -u | --branch | -b | --depth | -d )
+        --branch | -b | --depth | -d | \
+        --tag | -v)
             # Suggest nothing :P
+            return
+            ;;
+        --tag | -v)
             return
             ;;
         --help*)
