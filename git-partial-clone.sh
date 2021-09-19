@@ -538,7 +538,12 @@ _abort() {
         _notif warn "Removing empty tree in ${CLONE_DIR}"
         rmdir -p --ignore-fail-on-non-empty ${CLONE_DIR%/*}
     fi
-    exit 1
+
+    if [[ "${1}" == *"already exists"* ]]; then
+        exit 0  # exit without error
+    else
+        exit 1
+    fi
 }
 
 _upvar() {
