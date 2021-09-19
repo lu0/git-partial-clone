@@ -549,5 +549,5 @@ _upvar() {
     unset -v "${2}" && eval $2=\"\$1\"
 }
 
-main "$@"
+[[ "${#BASH_SOURCE[@]}" -lt 2 ]] && main "$@"
  

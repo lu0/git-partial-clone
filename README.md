@@ -12,6 +12,7 @@ This script clones a subdirectory of a github/gitlab repository.
     - [Mandatory variables](#mandatory-variables)
     - [Variables for **private repositories**](#variables-for-private-repositories)
     - [Optional variables](#optional-variables)
+- [Docker](#docker)
 
 # Install
 Install the script and autocompletion rules.
@@ -120,3 +121,30 @@ Fill in the config file ([`template.conf`](./template.conf)) with the informatio
     - Path to the target parent directory.
     - Omit it to clone the repository in the current directory.
  
+# Docker
+You can use the provided  [docker image](https://hub.docker.com/repository/docker/lu0alv/git-partial-clone) to create rolling or stable releases of your repositories.
+
+1. Fill your ([configuration file](#configuration-variables)) according to your needs.
+2. Add your entrypoint script in your dockerfile:
+
+```docker
+FROM lu0alv/git-partial-clone:latest
+
+.
+.
+.
+
+ENTRYPOINT ["/bin/sh", "-c" , "get-source && /home/${REPO_NAME}/${REMOTE_PARTIAL_DIR}/deploy.sh"]
+```
+
+3. Then run your dockerfile by providing your configuration file and mounting the file containing your github/gitlab token:
+
+```zsh
+CONFIG_FILE=/path/to/your/config-file.conf
+source $CONFIG_FILE
+docker run \
+    --env-file ${CONFIG_FILE} \
+    -v /path/to/your/existing/token-file:${TOKEN_PATH} \
+    # your extra options and dockerfile
+```
+
