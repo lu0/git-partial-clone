@@ -169,17 +169,15 @@ _git-partial-clone() {
     if [[ ${TAG_NAME} ]]; then
         # Pull from the specified tag
         if [ ${BRANCH} ]; then
-            _notif warn "TAG_NAME and BRANCH are exclusive, TAG_NAME takes precedence."
-            unset -v BRANCH
+            _notif warn "Searching '${TAG_NAME}' in branch '${BRANCH}'..."
+            _pull-specific-branch ${CLONE_DIR} ${BRANCH} ${COMMIT_DEPTH}
         fi
         _pull-from-tag ${CLONE_DIR} ${TAG_NAME} ${COMMIT_DEPTH}
     else
         # Pull branch(es)
         if [ ${BRANCH} ]; then
-            _notif ok "Trying to fetch branch ${BRANCH}"
             _pull-specific-branch ${CLONE_DIR} ${BRANCH} ${COMMIT_DEPTH}
         else
-            _notif warn "BRANCH not specified, pulling every branch in ${REPO_NAME}."
             _pull-all-branches ${CLONE_DIR} ${COMMIT_DEPTH}
         fi
     fi
@@ -378,13 +376,12 @@ _pull-from-tag() {
     ref_spec=${tag_name}:refs/tags/${tag_name}
 
     _get-depth-string "${commit_depth}" depth_string
-    git -C ${clone_dir} fetch origin ${ref_spec} ${depth_string} --filter=blob:none \
-        || _abort "Error fetching tag ${tag_name}."
+    git -C ${clone_dir} fetch origin ${ref_spec} ${depth_string} --filter=blob:none
 
     # Switch to a new -detached from the origin- branch
     branch_name=tags/${tag_name}
     git -C ${clone_dir} checkout ${tag_name} -b ${branch_name} \
-        || abort "Error switching to tag ${tag_name}"
+        || _abort "Error switching to tag ${tag_name}"
 }
 
 _pull-specific-branch() {
@@ -398,6 +395,8 @@ _pull-specific-branch() {
     local branch=${2}
     local commit_depth=${3}
     local depth_string
+
+    _notif ok "Trying to fetch branch ${BRANCH}..."
 
     _get-depth-string "${commit_depth}" depth_string
     git -C ${clone_dir} fetch ${depth_string} --filter=blob:none
@@ -419,6 +418,8 @@ _pull-all-branches() {
     local commit_depth=${2}
     local depth_string all_branch_names branch_name head_branch
 
+    _notif warn "BRANCH not specified, pulling every branch in ${REPO_NAME}."
+    
     _get-depth-string "${commit_depth}" depth_string
     git -C ${clone_dir} fetch ${depth_string} --filter=blob:none
 

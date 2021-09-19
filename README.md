@@ -109,11 +109,10 @@ Fill in the config file ([`template.conf`](./template.conf)) with the informatio
 - `BRANCH`:
     - The branch to be fetched.
     - Omit it to pull all of the branches and switch to the default one.
-    - Overrided by `TAG_NAME`.
 - `TAG_NAME`:(tag | t)
     - Tag of the version to be fetched.
     - Omit it to fetch the latest commit of `BRANCH`.
-    - Takes precedence over `BRANCH`.
+    - Set `BRANCH` to search for tags in a specific branch.
 - `COMMIT_DEPTH`:
     - Number of commits you want to fetch (useful for deployment purposes).
     - Omit it to fetch the entire remote history.
