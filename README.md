@@ -133,7 +133,7 @@ FROM lu0alv/git-partial-clone:latest
 .
 .
 
-ENTRYPOINT ["/bin/sh", "-c" , "get-source && /home/${REPO_NAME}/${REMOTE_PARTIAL_DIR}/deploy.sh"]
+ENTRYPOINT ["/bin/sh", "-c" , "get-source && exec /home/${PARENT_DIR}/${REPO_NAME}/${REMOTE_PARTIAL_DIR}/deploy.sh"]
 ```
 
 3. Then run your dockerfile by providing your configuration file and mounting the file containing your github/gitlab token:
