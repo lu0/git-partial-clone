@@ -35,7 +35,7 @@ wrapper() {
     echo "${conf_string}" > /home/${WRAPPER_SCRIPT}.conf
 
     # Run the main script
-    exec git-partial-clone
+    git-partial-clone || return 1
 }
 
 _show_usage() {
